@@ -45,7 +45,7 @@ end
 # display running loop count on the unicorn phat's top row
 define :loop_counter do
   x = x+=1
-  osc "/count", (x-1), 0.24, 1, 1
+  osc "/count", (x-1), 0.25, 1, 1
 end
 
 # wait for the state of the switch to change, call loop function and update counter each time

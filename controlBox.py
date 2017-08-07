@@ -76,7 +76,6 @@ server.addMsgHandler("/rgb", rgb)
 server.addMsgHandler("/beat", hsv)
 server.addMsgHandler("/count", loop_counter)
 
-
 # start thread
 server_thread = Thread(target=server.serve_forever)
 server_thread.daemon = True
@@ -85,12 +84,10 @@ server_thread.start()
 #switch1 = Button(19)
 switch2 = Button(21)
 
-
 try: # send message only when switch status changes
     switch2.when_pressed = switch2_on
     switch2.when_released = switch2_off
     pause()
-
 
 except KeyboardInterrupt:
     print 'losing...' # makes use of the '^C' following keyboard interrupt
