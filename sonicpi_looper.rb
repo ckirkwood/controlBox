@@ -1,20 +1,99 @@
+# 8 track audio looper for Sonic Pi
+# Controlled via OSC commands (i.e. controlBox.py)
+
 use_osc "192.168.1.103", 9090
 use_bpm 120
 
 t=8 #set buffer duration
 i=0 #set counter for loop names
-x=0 #set counter for loop display
+x=-1 #set counter for loop display
+xx=-2 #set counter for beat display
 
+# clear LEDs
+osc "/clear_all"
 
+# heartbeat
+in_thread do
+  loop do
+    cue :tick
+    sleep 1
+  end
+end
 
-# each flip of a switch records a new 8 bar sample
+# kick drum as metronome
+in_thread do
+  live_loop :bd do
+    sync :tick
+    sample :drum_heavy_kick
+  end
+end
+
+# called on each flip of switch 2; records a new 8 bar sample with a unique buffer name
 define :new_loop do
-  nxt = i+=1     # increase counter by 1 for unique buffer names
+  nxt = i+=1     # increase counter by 1 for a unique buffer name
   name = nxt.to_s.to_sym    # convert the integer to a string, then to a symbol (:name)
-  puts name
+  if nxt > 8     # when 8 loops are full, go back to 1 and overwrite as each buffer is filled again
+    i=0
+  end
   with_fx :record, buffer: buffer[name, t] do
     live_audio :guitar do
     end
+  end
+end
+
+# chose the lead-in time before recording starts, flash unicorn phat on the beat
+define :count_in do |beats|
+  beats.times do
+    sync :tick
+    b = xx+=2
+    osc "/beat", b, 0.25, 1, 1
+    sleep 0.15
+    osc "/beat", b, 0, 0, 0
+    sleep 0.85
+    if b > 4
+      xx = -2
+      osc "/hsv", 0, 0, 0
+    end
+  end
+end
+
+# flash unicorn phat on the beat while recording
+# the corresponding function in controlBox.py takes b as y-coordinates to flash 6x2 LED sections
+define :unicorn_feedback do
+  t.times do
+    sync :tick
+    b = xx+=2
+    osc "/beat", b, 0, 1, 1
+    sleep 0.15
+    osc "/beat", b, 0, 0, 0
+    sleep 0.85
+    if b > 4
+      xx = -2
+      osc "/hsv", 0, 0, 0
+    end
+  end
+end
+
+# display running loop count on the unicorn phat's top row
+define :loop_counter do
+  c = x+=1
+  if c >= 8     # reset after 8 loops
+    osc "/clear_counter"
+    x = 0
+    osc "/count", 0, 0.7, 1, 1
+  end
+  osc "/count", c, 0.7, 1, 1
+end
+
+# wait for the state of the switch to change, call loop functions and update counter each time
+in_thread do
+  live_loop :looper, sync: :tick do
+    sync '/osc/switch2'
+    count_in 4
+    loop_counter
+    new_loop
+    unicorn_feedback
+    cue :start_playback     # replay buffers at the end of each new loop
   end
 end
 
@@ -26,38 +105,6 @@ loop5 = buffer(:"5", t)
 loop6 = buffer(:"6", t)
 loop7 = buffer(:"7", t)
 loop8 = buffer(:"8", t)
-
-# flash unicorn phat to mark the beat while recording
-define :unicorn_feedback do
-  t.times do
-    osc "/beat", 0, 1, 1
-    sleep 0.15
-    osc "/beat", 0, 0, 0
-    sleep 0.85
-  end
-end
-
-# display running loop count on the unicorn phat's top row
-define :loop_counter do
-  x = x+=1
-  osc "/count", (x-1), 0.24, 1, 1
-  if x > 8
-    osc "/clear"
-    x = 0
-  end
-end
-
-# wait for the state of the switch to change, call loop function and update counter each time
-in_thread do
-  sample_free_all    # clear cached buffers
-  live_loop :looper do
-    sync '/osc/switch2'
-    new_loop
-    loop_counter
-    unicorn_feedback
-    cue :start_playback
-  end
-end
 
 # play all available samples
 in_thread do
