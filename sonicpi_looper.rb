@@ -1,7 +1,3 @@
-# Runs an 8 track looper in Sonic Pi
-# New loops are triggered by a toggle switch, and a Pimoroni Unicorn Phat provides feedback
-# Requires controlBox.py or a similar OSC client running on a remote computer (i.e. Raspberry Pi)
-
 use_osc "192.168.1.103", 9090
 use_bpm 120
 
@@ -9,8 +5,7 @@ t=8 #set buffer duration
 i=0 #set counter for loop names
 x=0 #set counter for loop display
 
-# clear cached buffers
-sample_free_all
+
 
 # each flip of a switch records a new 8 bar sample
 define :new_loop do
@@ -45,11 +40,16 @@ end
 # display running loop count on the unicorn phat's top row
 define :loop_counter do
   x = x+=1
-  osc "/count", (x-1), 0.25, 1, 1
+  osc "/count", (x-1), 0.24, 1, 1
+  if x > 8
+    osc "/clear"
+    x = 0
+  end
 end
 
 # wait for the state of the switch to change, call loop function and update counter each time
 in_thread do
+  sample_free_all    # clear cached buffers
   live_loop :looper do
     sync '/osc/switch2'
     new_loop
