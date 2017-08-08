@@ -49,9 +49,21 @@ def hsv(addr, tags, stuff, source):
             unicorn.set_pixel(x, y, r, g, b)
             unicorn.show()
 
+def beat(addr, tags, stuff, source):
+    x, h, s, v  = stuff
+    print stuff
+    r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(h, s, v)]
+    unicorn.set_pixel(x, 1, r, g, b)
+    unicorn.set_pixel(x+1, 1, r, g, b)
+    unicorn.set_pixel(x, 2, r, g, b)
+    unicorn.set_pixel(x+1, 2, r, g, b)
+    unicorn.set_pixel(x, 3, r, g, b)
+    unicorn.set_pixel(x+1, 3, r, g, b)       
+    unicorn.show()
+
 # display the running count of loops on the top row, takes an x value and HSV as inputs
 def loop_counter(addr, tags, stuff, source):
-    x, h, s, v = stuff
+    x, h, s, v  = stuff
     print stuff
     r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(h, s, v)]
     unicorn.set_pixel(x, 0, r, g, b)
@@ -61,6 +73,10 @@ def clear_counter(addr, tags, stuff, source):
     for x in range(8):
         unicorn.set_pixel(x, 0, 0, 0, 0)    
         unicorn.show()
+
+def clear_all(addr, tags, stuff, source):
+    unicorn.clear()
+    unicorn.show()
 
 # send switch status
 def switch2_on():
@@ -78,9 +94,11 @@ c.connect(send_address)
 
 # add message handlers - assign functions to incoming message addresses
 server.addMsgHandler("/rgb", rgb)
-server.addMsgHandler("/beat", hsv)
+server.addMsgHandler("/hsv", hsv)
+server.addMsgHandler("/beat", beat)
 server.addMsgHandler("/count", loop_counter)
-server.addMsgHandler("/clear", clear_counter)
+server.addMsgHandler("/clear_counter", clear_counter)
+server.addMsgHandler("/clear_all", clear_all)
 
 # start thread
 server_thread = Thread(target=server.serve_forever)
