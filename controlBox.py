@@ -57,6 +57,11 @@ def loop_counter(addr, tags, stuff, source):
     unicorn.set_pixel(x, 0, r, g, b)
     unicorn.show()
 
+def clear_counter(addr, tags, stuff, source):
+    for x in range(8):
+        unicorn.set_pixel(x, 0, 0, 0, 0)    
+        unicorn.show()
+
 # send switch status
 def switch2_on():
     send_osc('/switch2', 1)
@@ -75,6 +80,7 @@ c.connect(send_address)
 server.addMsgHandler("/rgb", rgb)
 server.addMsgHandler("/beat", hsv)
 server.addMsgHandler("/count", loop_counter)
+server.addMsgHandler("/clear", clear_counter)
 
 # start thread
 server_thread = Thread(target=server.serve_forever)
