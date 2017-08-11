@@ -3,6 +3,7 @@
 
 use_osc "192.168.1.103", 9090
 use_bpm 120
+set_volume! 2
 
 t=8 #set buffer duration
 i=0 #set counter for loop names
@@ -11,10 +12,11 @@ xx=-2 #set counter for beat display
 
 # clear LEDs
 osc "/clear_all"
+sample_free_all
 
 # heartbeat
 in_thread do
-  loop do
+  live_loop :heartbeats do
     cue :tick
     sleep 1
   end
@@ -28,7 +30,7 @@ in_thread do
   end
 end
 
-# called on each flip of switch 2; records a new 8 bar sample with a unique buffer name
+# called on each flip of switch 1; records a new 8 bar sample with a unique buffer name
 define :new_loop do
   nxt = i+=1     # increase counter by 1 for a unique buffer name
   name = nxt.to_s.to_sym    # convert the integer to a string, then to a symbol (:name)
@@ -88,7 +90,7 @@ end
 # wait for the state of the switch to change, call loop functions and update counter each time
 in_thread do
   live_loop :looper, sync: :tick do
-    sync '/osc/switch2'
+    sync '/osc/switch1'
     count_in 4
     loop_counter
     new_loop
@@ -106,17 +108,34 @@ loop6 = buffer(:"6", t)
 loop7 = buffer(:"7", t)
 loop8 = buffer(:"8", t)
 
+
+
 # play all available samples
 in_thread do
   live_loop :player, sync: :start_playback do
-    sample loop1
-    sample loop2
-    sample loop3
-    sample loop4
-    sample loop5
-    sample loop6
-    sample loop7
-    sample loop8
+    $one = sample loop1
+    $two = sample loop2
+    $three = sample loop3
+    $four = sample loop4
+    $five = sample loop5
+    $six = sample loop6
+    $seven = sample loop7
+    $eight = sample loop8
     sleep t
   end
 end
+
+#in_thread do
+#  live_loop :pots do
+#    pot1, pot2, pot3, pot4, pot5, pot6, pot7, pot8 = sync '/osc/pots'
+#    control $one, amp: pot1 / 127.0
+#    control $two, amp: pot2 / 127.0
+#    control $three, amp: pot3 / 127.0
+#    control $four, amp: pot4 / 127.0
+#    control $five, amp: pot5 / 127.0
+#    control $six, amp: pot6 / 127.0
+#    control $seven, amp: pot7 / 127.0
+#    control $eight, amp: pot8 / 127.0
+#    sleep t
+#  end
+#end
